@@ -1,0 +1,10 @@
+[Unit]
+Description=Monitor temperature and change cpu governor and frequency
+ConditionPathExists=/sys/devices/system/cpu/online
+
+[Service]
+Type=idle
+ExecStart=${bin_path}/cpufreq
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,60 @@
+#!/bin/bash
+info_maxfreq=`cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq`
+info_minfreq=`cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq`
+current_speed=$info_maxfreq
+
+for CPUREP in /sys/devices/system/cpu/cpu*/cpufreq
+do
+	echo -n "userspace" > $CPUREP/scaling_governor
+	echo -n $info_maxfreq > $CPUREP/scaling_setspeed
+	echo -n $info_maxfreq > $CPUREP/scaling_max_freq
+done
+
+setspeed () {
+	[ $1 != $current_speed ] || return;
+	current_speed=$1
+	for CPUSPEED in /sys/devices/system/cpu/cpu*/cpufreq/scaling_setspeed
+	do
+		echo -n $current_speed > $CPUSPEED
+	done
+	echo "$temp°C `cat $CPUSPEED`"
+}
+
+getTemp () {
+	temp=`sensors -uA  coretemp-isa-0000`
+	temp=${temp:47:2}
+}
+
+lastTime=0
+while true; do
+    if (( $lastTime <= 60)); then
+		getTemp
+		if (( $temp < 62 )); then
+			setspeed $info_maxfreq
+			time=7
+			lastTime=0
+		elif (( $temp >= 64 && $temp < 70 )); then
+			setspeed $(( $info_maxfreq * 60 /100 ))
+			time=7
+		elif (( $temp >= 72 && $temp < 78 )); then
+			setspeed $(( $info_maxfreq * 40 /100 ))
+			time=14
+		elif (( $temp >= 80 )); then
+			time=14
+			setspeed $info_minfreq
+		else
+			time=7
+		fi
+		sleep $time
+		lastTime=$(( $lastTime + $time ))
+	else
+		setspeed $info_minfreq
+		while (( $lastTime != 0 )); do
+			sleep 60
+			getTemp
+			if (( $temp < 62 )); then
+				lastTime=0
+			fi
+		done
+	fi
+done
