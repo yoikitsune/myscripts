@@ -1,6 +1,32 @@
 #!/bin/bash
-info_maxfreq=`cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq`
-info_minfreq=`cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq`
+
+if [ "`id -u`" != "0" ]; then
+	sudo $0 $*
+	exit $?
+fi
+
+cpufreq0_dir="/sys/devices/system/cpu/cpu0/cpufreq/"
+
+if [ -z "`grep userspace $cpufreq0_dir/scaling_available_governors`" ]; then
+	echo "No userspace in available governors. Exiting."
+	exit 0
+fi
+
+adapter="acpitz-acpi-0" #coretemp-isa-0000
+
+getTemp () {
+	temp=`sensors -uA $adapter | grep temp1_input`
+	temp=${temp:15:2}
+#	temp=${temp:47:2}
+}
+getTemp
+if ! [[ $temp =~ ^[0-9]+$ ]]; then
+	echo "Impossible de récupérer la température"
+	exit 0
+fi
+
+info_maxfreq=`cat $cpufreq0_dir/cpuinfo_max_freq`
+info_minfreq=`cat $cpufreq0_dir/cpuinfo_min_freq`
 current_speed=$info_maxfreq
 
 for CPUREP in /sys/devices/system/cpu/cpu*/cpufreq
@@ -18,11 +44,6 @@ setspeed () {
 		echo -n $current_speed > $CPUSPEED
 	done
 	echo "$temp°C `cat $CPUSPEED`"
-}
-
-getTemp () {
-	temp=`sensors -uA  coretemp-isa-0000`
-	temp=${temp:47:2}
 }
 
 lastTime=0
