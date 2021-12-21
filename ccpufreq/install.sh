@@ -17,10 +17,19 @@ if [ ! -x /usr/bin/sensors ]; then
   exit 1
 fi
 
-sensors
-adapters="acpitz-acpi-0 coretemp-isa-0000"
+
+adapters="coretemp-isa-0000 acpitz-acpi-0"
 for a in $adapters; do
-  echo $a
+  temp=`sensors -uA $a | grep temp1_input`
+  if [[ $temp =~ [0-9]{2} ]]; then
+    echo "${BASH_REMATCH[0]}"
+    break
+  fi
 done
+echo $temp
+if ! [[ $temp =~ ^[0-9]+$ ]]; then
+	echo "Impossible de récupérer la température"
+	exit 0
+fi
 
 echo "Installation réussie."
