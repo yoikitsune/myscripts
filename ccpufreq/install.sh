@@ -1,6 +1,4 @@
 #!/bin/bash
-set -e
-
 if [ "`id -u`" != "0" ]; then
   echo "Must be root"
   exit 1
@@ -23,13 +21,9 @@ for a in $adapters; do
   temp=`sensors -uA $a | grep temp1_input`
   if [[ $temp =~ [0-9]{2} ]]; then
     echo "${BASH_REMATCH[0]}"
-    break
+    echo $a
+    echo "Installation réussie."
+    exit
   fi
 done
-echo $temp
-if ! [[ $temp =~ ^[0-9]+$ ]]; then
-	echo "Impossible de récupérer la température"
-	exit 0
-fi
-
-echo "Installation réussie."
+echo "Echec de l'installation"
