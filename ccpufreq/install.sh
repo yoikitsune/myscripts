@@ -1,18 +1,26 @@
 #!/bin/bash
-(
-  set -e
+set -e
 
-  [ "`id -u`" = "0" ] || exit 1
+if [ "`id -u`" != "0" ]; then
+  echo "Must be root"
+  exit 1
+fi
 
-  cpufreq0_dir="/sys/devices/system/cpu/cpu0/cpufreq"
-  [ -d "$cpufreq0_dir" ] || exit 1
-  [ -x /usr/bin/sensors ] || exit 1
+cpufreq0_dir="/sys/devices/system/cpu/cpu0/cpufreq"
+if [ ! -d "$cpufreq0_dir" ]; then
+  echo "Cannot find cpufreq"
+  exit 1
+fi
 
-  adapters="acpitz-acpi-0 coretemp-isa-0000"
-  for a in $adapters; do
-    echo $a
-  done
-  echo "Installation réussie."
-)
+if [ ! -x /usr/bin/sensors ]; then
+  echo "Cannot find sensors"
+  exit 1
+fi
 
-[ $? = 0 ] || echo "Installation échouée"
+sensors
+adapters="acpitz-acpi-0 coretemp-isa-0000"
+for a in $adapters; do
+  echo $a
+done
+
+echo "Installation réussie."
